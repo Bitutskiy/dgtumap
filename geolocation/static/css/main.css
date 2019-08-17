@@ -1,0 +1,26 @@
+.image-link {
+    position: relative;
+    width: 100%;
+}
+
+.image-link img {
+    width: 100%;
+    height: auto;
+}
+
+.image-link .btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: khaki;
+    font-size: 71px;
+}
+
+.image-link .btn:hover {
+   color: white;
+}
+
+.image-link .btn::selection {
+   background: transparent;
+}

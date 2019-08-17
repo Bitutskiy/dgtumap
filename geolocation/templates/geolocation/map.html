@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Парк ДГТУ</title>
+    {% include "geolocation/includes/favicon_include.html" %}
+	<meta charset="utf-8" />
+    {% load static %}
+    <!-- Dependency to Leaflet -->
+    <link rel="stylesheet" href="{% static 'css/leaflet.css'%}" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+    <!-- Dependency to Leaflet Draw -->
+    <link rel="stylesheet" href="{% static 'css/leaflet.draw.css' %}">
+    <script src="{% static 'js/leaflet.draw.js' %}"></script>
+    <!-- Dependency to  Leaflet.MeasureControl -->
+    <link rel="stylesheet" href="{% static 'css/leaflet.measurecontrol.css' %}">
+    <script src="{% static 'js/leaflet.measurecontrol.js' %}"></script>
+    <!-- Dependency to  Leaflet.MousePosition -->
+    <link rel="stylesheet" href="{% static 'css/L.Control.MousePosition.css' %}">
+    <script src="{% static 'js/L.Control.MousePosition.js' %}"></script>
+    <!-- Dependency to  Backbone -->
+    <script src="{% static 'js/jquery-3.4.1.min.js' %}"></script>
+    <script src="{% static 'js/underscore.js' %}"></script>
+    <!-- Dependency to  Marionette -->
+    <script src="{% static 'js/backbone-min.js' %}"></script>
+    <script src="{% static 'js/backbone.radio.js' %}"></script>
+    <script src="{% static 'js/backbone.marionette.min.js' %}"></script>
+
+</head>
+<body>
+    <div    id="mapid"
+            style=" position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;">
+    </div>
+    <script>
+        //Map with extentions(plugins)
+        var mymap = L.map('mapid', { measureControl:true }).setView([47.24100191281111, 39.71065163612366], 17);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mymap);
+
+        L.control.mousePosition().addTo(mymap);
+
+        //Custom icons
+        var educationIcon = L.icon({
+            iconUrl: '{% static 'css/images/education_ico.png' %}',
+            iconSize: [38, 40],
+        });
+        var sportIcon = L.icon({
+            iconUrl: '{% static 'css/images/sport_ico.png' %}',
+            iconSize: [38, 40],
+        });
+        var leisureIcon = L.icon({
+            iconUrl: '{% static 'css/images/leisure_ico.png' %}',
+            iconSize: [38, 40],
+        });
+
+        //Add points with customization
+        $.ajax({
+            url:'/map/data',
+            success: function(data){
+                myData = data;
+                //console.log(data);
+                L.geoJSON(myData, {
+                    pointToLayer: function (feature, latlng) {
+                        if (feature.properties.type === 1) return L.marker(latlng, {icon: educationIcon});
+                        if (feature.properties.type === 2) return L.marker(latlng, {icon: leisureIcon});
+                        if (feature.properties.type === 3) return L.marker(latlng, {icon: sportIcon});
+                    },
+                    onEachFeature: function(feature, layer) {
+                                        layer.bindPopup("<b>Name: </b><i>"+feature.properties.name+"</i><br><b>Description: </b><i>"+feature.properties.description+"</i>", {className: "new-class"});
+                                   }
+                }).addTo(mymap)
+                
+                //Marionette
+                const MenuModel = Backbone.Model.extend({})
+                const Btn = Marionette.View.extend({
+                  className: 'mb-3',
+                  template: _.template('<button value="<%= geometry.coordinates %>"><%= properties.pk %>:<%= properties.name %></button>')
+                })
+                const Menu = Marionette.Application.extend({
+                    region: '#app',
+                    onStart(ops) {
+                        for (i = 0; i<ops.options.data.length; i++) {
+                            new Btn(ops.options.data[i]);
+                            console.log(ops.options.data[i])
+                        }
+                    },
+                    initialise() {
+                        this.model = new MenuModel()
+                    }
+                });
+                console.log(myData)
+                new Menu({ data:myData.features }).start()
+             }
+        });
+        //Right menu with points
+            /*var PointItem = Backbone.Model.extend({});
+            console.log(myData);
+            var pointItem = new PointItem(myData.features[0]);
+
+
+
+            //const menuTemplate = _.template('<div id="js-main-menu"></div>')
+
+            const Btn = Mn.View.extend({
+                model: pointItem,
+                tagName: 'button',
+                className: 'btn btn-object',
+                template: _.template('Click'),
+
+                events: {
+                    'click': 'onClick'
+                },
+
+                onClick() {
+                    console.log('click')
+                }
+            })
+
+            const Menu = Mn.View.extend({
+                tagName: 'div',
+                className: 'points-menu text-center mt-5',
+                template: menuTemplate,
+
+                regions: {
+                    'btnRegion': '#js-main-menu',
+                },
+
+                onRender() {
+                    btn = new Btn();
+                    this.showChildView('btnRegion', btn);
+                }
+            })
+
+            //const menu = new Menu();
+            //menu.render();
+
+            //$('#app').html(menu.$el);*/
+    </script>
+    <div id="app"></div>
+    <style>
+        #js-main-menu {
+            position: absolute;
+            top:0;
+            right:0;
+            z-index:1000;
+            margin: 5px;
+        }
+    </style>
+</body>
+</html>
